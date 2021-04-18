@@ -6,7 +6,7 @@
       <creator>Evan</creator>
       <description>No description provided</description>
       <coverage>4.3.1.772</coverage>
-      <version>0.26</version>
+      <version>0.27</version>
       <persistent>false</persistent>
       <identifier>UID_4107098d-781b-4cbb-93f0-1e7dffc92de1</identifier>
     </metaData>
@@ -402,7 +402,7 @@
           </flowsInto>
           <flowsInto>
             <nextElementRef id="Carrier_Appointment" />
-            <predicate ordering="0">true()</predicate>
+            <predicate ordering="0">/Net/Order_Timeout/text()='false' and /Net/Order_Approval/text()='true'</predicate>
           </flowsInto>
           <join code="and" />
           <split code="xor" />
