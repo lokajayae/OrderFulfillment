@@ -6,7 +6,7 @@
       <creator>Evan</creator>
       <description>No description provided</description>
       <coverage>4.3.1.772</coverage>
-      <version>0.23</version>
+      <version>0.25</version>
       <persistent>false</persistent>
       <identifier>UID_4107098d-781b-4cbb-93f0-1e7dffc92de1</identifier>
     </metaData>
@@ -381,6 +381,13 @@
  &lt;ShipmentNumber&gt;a string&lt;/ShipmentNumber&gt;
  &lt;ShipmentCost&gt;3.142&lt;/ShipmentCost&gt;</initialValue>
       </localVariable>
+      <localVariable>
+        <index>7</index>
+        <name>Claims_Deadline_Timer</name>
+        <type>YTimerType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue />
+      </localVariable>
       <processControlElements>
         <inputCondition id="InputCondition">
           <flowsInto>
@@ -514,6 +521,24 @@
           </flowsInto>
           <join code="and" />
           <split code="xor" />
+          <startingMappings>
+            <mapping>
+              <expression query="&lt;Order&gt;{/Net/Order/*}&lt;/Order&gt;" />
+              <mapsTo>Order</mapsTo>
+            </mapping>
+            <mapping>
+              <expression query="&lt;Acceptance_Certificate&gt;{/Net/Acceptance_Certificate/*}&lt;/Acceptance_Certificate&gt;" />
+              <mapsTo>Acceptance_Certificate</mapsTo>
+            </mapping>
+            <mapping>
+              <expression query="&lt;Transportation_Quote&gt;{/Net/Transportation_Quote/*}&lt;/Transportation_Quote&gt;" />
+              <mapsTo>Transportation_Quote</mapsTo>
+            </mapping>
+            <mapping>
+              <expression query="&lt;Claims_Deadline_Timer&gt;{/Net/Claims_Deadline_Timer/*}&lt;/Claims_Deadline_Timer&gt;" />
+              <mapsTo>Claims_Deadline_Timer</mapsTo>
+            </mapping>
+          </startingMappings>
           <decomposesTo id="Freight_Delivered" />
         </task>
         <outputCondition id="OutputCondition" />
@@ -1624,15 +1649,91 @@
     </decomposition>
     <decomposition id="Freight_Delivered" xsi:type="NetFactsType">
       <name>Freight Delivered</name>
+      <inputParam>
+        <index>0</index>
+        <name>Transportation_Quote</name>
+        <type>TransportationQuoteType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </inputParam>
+      <inputParam>
+        <index>1</index>
+        <name>Acceptance_Certificate</name>
+        <type>AcceptanceCertificateType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </inputParam>
+      <inputParam>
+        <index>2</index>
+        <name>Order</name>
+        <type>PurchaseOrderType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </inputParam>
+      <inputParam>
+        <index>3</index>
+        <name>Claims_Deadline_Timer</name>
+        <type>YTimerType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </inputParam>
+      <localVariable>
+        <index>4</index>
+        <name>Loss_Damage_Claim</name>
+        <type>LossOrDamageClaimType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue />
+      </localVariable>
+      <localVariable>
+        <index>5</index>
+        <name>Return_Merchandise</name>
+        <type>ReturnMerchandiseType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue />
+      </localVariable>
+      <localVariable>
+        <index>6</index>
+        <name>Loss_Damage_Appr</name>
+        <type>LossOrDamageClaimApprovalType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue />
+      </localVariable>
+      <localVariable>
+        <index>7</index>
+        <name>Return_Merchandise_Appr</name>
+        <type>ReturnMerchandiseApprovalType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue />
+      </localVariable>
       <processControlElements>
         <inputCondition id="InputCondition_1">
           <flowsInto>
-            <nextElementRef id="T_1" />
+            <nextElementRef id="Lodge_a_Request_for_Return" />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="Claims_Timeout" />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="Lodge_Loss_or_Damage" />
           </flowsInto>
         </inputCondition>
-        <task id="T_1">
+        <task id="Claims_Timeout">
+          <name>Claims Timeout</name>
           <flowsInto>
             <nextElementRef id="OutputCondition_1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+          <timer>
+            <netparam>Claims_Deadline_Timer</netparam>
+          </timer>
+          <resourcing>
+            <offer initiator="user" />
+            <allocate initiator="user" />
+            <start initiator="user" />
+          </resourcing>
+          <decomposesTo id="Claims_Timeout" />
+        </task>
+        <task id="Lodge_Loss_or_Damage">
+          <name>Lodge Loss or Damage</name>
+          <flowsInto>
+            <nextElementRef id="Authorize_Loss_or_Damage" />
           </flowsInto>
           <join code="xor" />
           <split code="and" />
@@ -1641,6 +1742,92 @@
             <allocate initiator="user" />
             <start initiator="user" />
           </resourcing>
+        </task>
+        <task id="Lodge_a_Request_for_Return">
+          <name>Lodge a Request for Return</name>
+          <flowsInto>
+            <nextElementRef id="Authorize_Return" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+          <startingMappings>
+            <mapping>
+              <expression query="&lt;Return_Merchandise&gt;{/Freight_Delivered/Return_Merchandise/*}&lt;/Return_Merchandise&gt;" />
+              <mapsTo>Return_Merchandise</mapsTo>
+            </mapping>
+          </startingMappings>
+          <completedMappings>
+            <mapping>
+              <expression query="&lt;Return_Merchandise&gt;{/Lodge_a_Request_for_Return/Return_Merchandise/*}&lt;/Return_Merchandise&gt;" />
+              <mapsTo>Return_Merchandise</mapsTo>
+            </mapping>
+          </completedMappings>
+          <resourcing>
+            <offer initiator="system">
+              <distributionSet>
+                <initialSet>
+                  <role>RO-29959559-7725-40a0-930e-ee4a56541654</role>
+                </initialSet>
+              </distributionSet>
+            </offer>
+            <allocate initiator="user" />
+            <start initiator="user" />
+          </resourcing>
+          <decomposesTo id="Lodge_a_Request_for_Return" />
+        </task>
+        <task id="Authorize_Loss_or_Damage">
+          <name>Authorize Loss or Damage</name>
+          <flowsInto>
+            <nextElementRef id="Loss_or_Damage_Management" />
+            <isDefaultFlow />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="OutputCondition_1" />
+            <predicate ordering="0">true()</predicate>
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+          <resourcing>
+            <offer initiator="user" />
+            <allocate initiator="user" />
+            <start initiator="user" />
+          </resourcing>
+        </task>
+        <task id="Authorize_Return">
+          <name>Authorize Return</name>
+          <flowsInto>
+            <nextElementRef id="Return_Management" />
+            <isDefaultFlow />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="OutputCondition_1" />
+            <predicate ordering="0">true()</predicate>
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+          <resourcing>
+            <offer initiator="user" />
+            <allocate initiator="user" />
+            <start initiator="user" />
+          </resourcing>
+        </task>
+        <task id="Loss_or_Damage_Management">
+          <name>Loss or Damage Management</name>
+          <flowsInto>
+            <nextElementRef id="OutputCondition_1" />
+            <isDefaultFlow />
+          </flowsInto>
+          <join code="and" />
+          <split code="xor" />
+        </task>
+        <task id="Return_Management">
+          <name>Return Management</name>
+          <flowsInto>
+            <nextElementRef id="OutputCondition_1" />
+            <isDefaultFlow />
+          </flowsInto>
+          <join code="and" />
+          <split code="xor" />
         </task>
         <outputCondition id="OutputCondition_1" />
       </processControlElements>
@@ -2480,6 +2667,7 @@
           </flowsInto>
           <join code="and" />
           <split code="xor" />
+          <decomposesTo id="Process_Freight_Payment" />
         </task>
         <task id="T_6">
           <flowsInto>
@@ -2666,6 +2854,54 @@
         <outputCondition id="OutputCondition_4" />
       </processControlElements>
     </decomposition>
+    <decomposition id="Process_Freight_Payment" xsi:type="NetFactsType">
+      <name>Process Freight Payment</name>
+      <localVariable>
+        <index>0</index>
+        <name>Freight_Payment</name>
+        <type>string</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue>TO DO</initialValue>
+      </localVariable>
+      <processControlElements>
+        <inputCondition id="InputCondition_5">
+          <flowsInto>
+            <nextElementRef id="Process" />
+          </flowsInto>
+        </inputCondition>
+        <task id="Process">
+          <name>Process</name>
+          <flowsInto>
+            <nextElementRef id="OutputCondition_5" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+          <startingMappings>
+            <mapping>
+              <expression query="&lt;Freight_Payment&gt;{/Process_Freight_Payment/Freight_Payment/text()}&lt;/Freight_Payment&gt;" />
+              <mapsTo>Freight_Payment</mapsTo>
+            </mapping>
+          </startingMappings>
+          <resourcing>
+            <offer initiator="system">
+              <distributionSet>
+                <initialSet>
+                  <participant>PA-7933b9de-5aa6-4d9c-be12-d1a5cc8a8c67</participant>
+                </initialSet>
+              </distributionSet>
+            </offer>
+            <allocate initiator="system">
+              <allocator>
+                <name>RandomChoice</name>
+              </allocator>
+            </allocate>
+            <start initiator="system" />
+          </resourcing>
+          <decomposesTo id="Process" />
+        </task>
+        <outputCondition id="OutputCondition_5" />
+      </processControlElements>
+    </decomposition>
     <decomposition id="Approve_Order" xsi:type="WebServiceGatewayFactsType">
       <name>Approve Order</name>
       <inputParam>
@@ -2806,6 +3042,10 @@
     </decomposition>
     <decomposition id="Carrier_Timeout" xsi:type="WebServiceGatewayFactsType">
       <name>Carrier Timeout</name>
+      <externalInteraction>automated</externalInteraction>
+    </decomposition>
+    <decomposition id="Claims_Timeout" xsi:type="WebServiceGatewayFactsType">
+      <name>Claims Timeout</name>
       <externalInteraction>automated</externalInteraction>
     </decomposition>
     <decomposition id="Confirm_Purchase_Order" xsi:type="WebServiceGatewayFactsType">
@@ -3075,6 +3315,22 @@
       </outputParam>
       <externalInteraction>manual</externalInteraction>
     </decomposition>
+    <decomposition id="Lodge_a_Request_for_Return" xsi:type="WebServiceGatewayFactsType">
+      <name>Lodge a Request for Return</name>
+      <inputParam>
+        <index>0</index>
+        <name>Return_Merchandise</name>
+        <type>ReturnMerchandiseType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </inputParam>
+      <outputParam>
+        <index>0</index>
+        <name>Return_Merchandise</name>
+        <type>ReturnMerchandiseType</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </outputParam>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
     <decomposition id="Log_Trackpoint_Order_Entry" xsi:type="WebServiceGatewayFactsType">
       <name>Log Trackpoint Order Entry</name>
       <inputParam>
@@ -3201,6 +3457,15 @@
       </outputParam>
       <externalInteraction>manual</externalInteraction>
     </decomposition>
+    <decomposition id="Process" xsi:type="WebServiceGatewayFactsType">
+      <inputParam>
+        <index>0</index>
+        <name>Freight_Payment</name>
+        <type>string</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+      </inputParam>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
     <decomposition id="Process_Shipment_Payment" xsi:type="WebServiceGatewayFactsType">
       <name>Process Shipment Payment</name>
       <inputParam>
@@ -3272,7 +3537,7 @@
     <specification id="_07_Order_Fullfillment">
       <size w="799" h="642"/>
       <net id="Payment">
-        <bounds x="0" y="-326" w="1285" h="1092"/>
+        <bounds x="0" y="-421" w="1285" h="1092"/>
         <frame x="0" y="0" w="1303" h="535"/>
         <viewport x="0" y="0" w="1303" h="535"/>
         <scale>1.01</scale>
@@ -3649,6 +3914,45 @@
         </flow>
         <flow source="Approve_Shipment_Payment_Order" target="Process_Shipment_Payment">
           <ports in="2" out="2"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+      </net>
+      <net id="Process_Freight_Payment">
+        <bounds x="0" y="0" w="1300" h="532"/>
+        <frame x="0" y="0" w="1303" h="535"/>
+        <viewport x="0" y="0" w="1303" h="535"/>
+        <vertex id="InputCondition_5">
+          <attributes>
+            <bounds x="444" y="188" w="32" h="32"/>
+          </attributes>
+        </vertex>
+        <vertex id="OutputCondition_5">
+          <attributes>
+            <bounds x="680" y="180" w="32" h="32"/>
+          </attributes>
+        </vertex>
+        <container id="Process">
+          <vertex>
+            <attributes>
+              <bounds x="560" y="196" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="528" y="228" w="96" h="20"/>
+            </attributes>
+          </label>
+        </container>
+        <flow source="Process" target="OutputCondition_5">
+          <ports in="13" out="12"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="InputCondition_5" target="Process">
+          <ports in="13" out="12"/>
           <attributes>
             <lineStyle>11</lineStyle>
           </attributes>
@@ -5027,27 +5331,178 @@
         <viewport x="0" y="0" w="1303" h="535"/>
         <vertex id="InputCondition_1">
           <attributes>
-            <bounds x="36" y="220" w="32" h="32"/>
+            <bounds x="528" y="28" w="32" h="32"/>
           </attributes>
         </vertex>
         <vertex id="OutputCondition_1">
           <attributes>
-            <bounds x="1,060" y="220" w="32" h="32"/>
+            <bounds x="528" y="464" w="32" h="32"/>
           </attributes>
         </vertex>
-        <vertex id="T_1">
-          <attributes>
-            <bounds x="160" y="240" w="32" h="32"/>
-          </attributes>
-        </vertex>
-        <flow source="InputCondition_1" target="T_1">
-          <ports in="13" out="12"/>
+        <container id="Lodge_a_Request_for_Return">
+          <vertex>
+            <attributes>
+              <bounds x="304" y="172" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="272" y="204" w="96" h="60"/>
+            </attributes>
+          </label>
+        </container>
+        <container id="Return_Management">
+          <vertex>
+            <attributes>
+              <bounds x="304" y="400" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="272" y="432" w="97" h="41"/>
+            </attributes>
+          </label>
+        </container>
+        <container id="Claims_Timeout">
+          <vertex>
+            <attributes>
+              <bounds x="528" y="168" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="496" y="200" w="97" h="21"/>
+            </attributes>
+          </label>
+        </container>
+        <container id="Authorize_Loss_or_Damage">
+          <vertex>
+            <attributes>
+              <bounds x="760" y="304" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="728" y="348" w="97" h="41"/>
+            </attributes>
+          </label>
+          <decorator type="XOR_split">
+            <position>11</position>
+            <attributes>
+              <bounds x="760" y="335" w="32" h="11"/>
+            </attributes>
+          </decorator>
+        </container>
+        <container id="Authorize_Return">
+          <vertex>
+            <attributes>
+              <bounds x="304" y="296" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="272" y="340" w="97" h="41"/>
+            </attributes>
+          </label>
+          <decorator type="XOR_split">
+            <position>11</position>
+            <attributes>
+              <bounds x="304" y="327" w="32" h="11"/>
+            </attributes>
+          </decorator>
+        </container>
+        <container id="Loss_or_Damage_Management">
+          <vertex>
+            <attributes>
+              <bounds x="760" y="404" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="728" y="436" w="97" h="61"/>
+            </attributes>
+          </label>
+        </container>
+        <container id="Lodge_Loss_or_Damage">
+          <vertex>
+            <attributes>
+              <bounds x="760" y="172" w="32" h="32"/>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="728" y="204" w="96" h="40"/>
+            </attributes>
+          </label>
+        </container>
+        <flow source="Loss_or_Damage_Management" target="OutputCondition_1">
+          <ports in="11" out="13"/>
           <attributes>
             <lineStyle>11</lineStyle>
           </attributes>
         </flow>
-        <flow source="T_1" target="OutputCondition_1">
-          <ports in="13" out="12"/>
+        <flow source="InputCondition_1" target="Lodge_Loss_or_Damage">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Return_Management" target="OutputCondition_1">
+          <ports in="11" out="12"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="InputCondition_1" target="Claims_Timeout">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Lodge_Loss_or_Damage" target="Authorize_Loss_or_Damage">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Authorize_Loss_or_Damage" target="Loss_or_Damage_Management">
+          <ports in="2" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Authorize_Return" target="Return_Management">
+          <ports in="2" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Authorize_Return" target="OutputCondition_1">
+          <ports in="2" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Lodge_a_Request_for_Return" target="Authorize_Return">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Authorize_Loss_or_Damage" target="OutputCondition_1">
+          <ports in="2" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="Claims_Timeout" target="OutputCondition_1">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="InputCondition_1" target="Lodge_a_Request_for_Return">
+          <ports in="11" out="10"/>
           <attributes>
             <lineStyle>11</lineStyle>
           </attributes>
