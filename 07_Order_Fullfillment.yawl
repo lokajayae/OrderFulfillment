@@ -6,7 +6,7 @@
       <creator>Evan</creator>
       <description>No description provided</description>
       <coverage>4.3.1.772</coverage>
-      <version>0.19</version>
+      <version>0.21</version>
       <persistent>false</persistent>
       <identifier>UID_4107098d-781b-4cbb-93f0-1e7dffc92de1</identifier>
     </metaData>
@@ -2088,7 +2088,23 @@
     </decomposition>
     <decomposition id="Payment" xsi:type="NetFactsType">
       <processControlElements>
-        <inputCondition id="InputCondition_4" />
+        <inputCondition id="InputCondition_4">
+          <flowsInto>
+            <nextElementRef id="T" />
+          </flowsInto>
+        </inputCondition>
+        <task id="T">
+          <flowsInto>
+            <nextElementRef id="OutputCondition_4" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+          <resourcing>
+            <offer initiator="user" />
+            <allocate initiator="user" />
+            <start initiator="user" />
+          </resourcing>
+        </task>
         <outputCondition id="OutputCondition_4" />
       </processControlElements>
     </decomposition>
@@ -2553,6 +2569,23 @@
             <bounds x="600" y="484" w="32" h="32"/>
           </attributes>
         </vertex>
+        <vertex id="T">
+          <attributes>
+            <bounds x="436" y="220" w="32" h="32"/>
+          </attributes>
+        </vertex>
+        <flow source="InputCondition_4" target="T">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
+        <flow source="T" target="OutputCondition_4">
+          <ports in="11" out="10"/>
+          <attributes>
+            <lineStyle>11</lineStyle>
+          </attributes>
+        </flow>
       </net>
       <net id="Carrier_Appointment">
         <bounds x="0" y="0" w="1285" h="1850"/>
@@ -3388,7 +3421,7 @@
         </flow>
       </net>
       <net id="Freight_in_Transit">
-        <bounds x="0" y="-60" w="1285" h="793"/>
+        <bounds x="0" y="-36" w="1285" h="793"/>
         <frame x="0" y="0" w="1303" h="535"/>
         <viewport x="0" y="0" w="1303" h="535"/>
         <scale>1.51</scale>
